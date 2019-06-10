@@ -7,7 +7,6 @@ namespace JustEat.ApplePayJS.Controllers
     using System.Threading;
     using System.Threading.Tasks;
     using JustEat.ApplePayJS.Clients;
-    using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Options;
     using Models;
@@ -50,7 +49,7 @@ namespace JustEat.ApplePayJS.Controllers
             // request body is a documented Apple Pay JS hostname. The IP addresses and DNS hostnames of
             // these servers are available here: https://developer.apple.com/documentation/applepayjs/setting_up_server_requirements
             if (!ModelState.IsValid ||
-                string.IsNullOrWhiteSpace(model?.ValidationUrl) ||
+               string.IsNullOrWhiteSpace(model?.ValidationUrl) ||
                 !Uri.TryCreate(model.ValidationUrl, UriKind.Absolute, out Uri requestUri))
             {
                 return BadRequest();
@@ -60,11 +59,11 @@ namespace JustEat.ApplePayJS.Controllers
             var request = new MerchantSessionRequest()
             {
                 MerchantIdentifier = _certificate.GetMerchantIdentifier(),
-                DomainName = Request.GetTypedHeaders().Host.Value,
+                DomainName = "localhost",//Request.GetTypedHeaders().Host.Value,
                 DisplayName = _options.StoreName
             };
 
-            JObject merchantSession = await _client.GetMerchantSessionAsync(requestUri, request, cancellationToken);
+            JObject merchantSession = await _client.GetMerchantSessionAsync(model.ValidationUrl, request, cancellationToken);
 
             // Return the merchant session as-is to the JavaScript as JSON.
             return Json(merchantSession);

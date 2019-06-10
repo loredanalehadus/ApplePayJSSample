@@ -14,8 +14,8 @@ justEat = {
             var delivery = "0.01";
             var deliveryTotal = (Number(subtotal) + Number(delivery)).toString();
 
-            var countryCode = $("meta[name='payment-country-code']").attr("content") || "GB";
-            var currencyCode = $("meta[name='payment-currency-code']").attr("content") || "GBP";
+            var countryCode = $("meta[name='payment-country-code']").attr("content") || "US";
+            var currencyCode = $("meta[name='payment-currency-code']").attr("content") || "USD";
             var storeName = $("meta[name='apple-pay-store-name']").attr("content");
 
             var totalForCollection = {
@@ -41,12 +41,12 @@ justEat = {
             var paymentRequest = {
                 countryCode: countryCode,
                 currencyCode: currencyCode,
-                merchantCapabilities: [ "supports3DS" ],
-                supportedNetworks: [ "amex", "masterCard", "visa" ],
+                merchantCapabilities: ["supports3DS"],
+                supportedNetworks: ["amex", "masterCard", "visa"],
                 lineItems: lineItemsForDelivery,
                 total: totalForDelivery,
-                requiredBillingContactFields: [ "email", "name", "phone", "postalAddress" ],
-                requiredShippingContactFields: [ "email", "name", "phone", "postalAddress" ],
+                requiredBillingContactFields: ["email", "name", "phone", "postalAddress"],
+                requiredShippingContactFields: ["email", "name", "phone", "postalAddress"],
                 shippingType: "delivery",
                 shippingMethods: [
                     { label: "Delivery", amount: delivery, identifier: "delivery", detail: "Delivery to you" },
@@ -77,6 +77,8 @@ justEat = {
                     validationUrl: event.validationURL
                 };
 
+                console.log('validationUrl:', data.validationUrl);
+
                 // Setup antiforgery HTTP header.
                 var antiforgeryHeader = $("meta[name='x-antiforgery-name']").attr("content");
                 var antiforgeryToken = $("meta[name='x-antiforgery-token']").attr("content");
@@ -94,6 +96,7 @@ justEat = {
                     headers: headers
                 }).then(function (merchantSession) {
                     // Complete validation by passing the merchant session to the Apple Pay session.
+                    console.log(merchantSession);
                     session.completeMerchantValidation(merchantSession);
                 });
             };
@@ -118,61 +121,21 @@ justEat = {
                 };
 
                 session.completeShippingMethodSelection(update);
+                console.log("onshippingmethodselected");
             };
 
             // Setup handler to receive the token when payment is authorized.
             session.onpaymentauthorized = function (event) {
 
-                // Get the contact details for use, for example to
-                // use to create an account for the user.
-                var billingContact = event.payment.billingContact;
-                var shippingContact = event.payment.shippingContact;
+                //Fill contact details from Apple payment sheet
+                justEat.applePay.fillContactDetails();
 
                 // Get the payment data for use to capture funds from
                 // the encrypted Apple Pay token in your server.
                 var token = event.payment.token.paymentData;
-
-                // Apply the details from the Apple Pay sheet to the page.
-                var update = function (panel, contact) {
-
-                    if (contact.emailAddress) {
-                        panel.find(".contact-email")
-                             .text(contact.emailAddress)
-                             .attr("href", "mailto:" + contact.emailAddress)
-                             .append("<br/>")
-                             .removeClass("d-none");
-                    }
-
-                    if (contact.phoneNumber) {
-                        panel.find(".contact-telephone")
-                             .text(contact.phoneNumber)
-                             .attr("href", "tel:" + contact.phoneNumber)
-                             .append("<br/>")
-                             .removeClass("d-none");
-                    }
-
-                    if (contact.givenName) {
-                        panel.find(".contact-name")
-                             .text(contact.givenName + " " + contact.familyName)
-                             .append("<br/>")
-                             .removeClass("d-none");
-                    }
-
-                    if (contact.addressLines) {
-                        panel.find(".contact-address-lines").text(contact.addressLines.join(", "));
-                        panel.find(".contact-sub-locality").text(contact.subLocality);
-                        panel.find(".contact-locality").text(contact.locality);
-                        panel.find(".contact-sub-administrative-area").text(contact.subAdministrativeArea);
-                        panel.find(".contact-administrative-area").text(contact.administrativeArea);
-                        panel.find(".contact-postal-code").text(contact.postalCode);
-                        panel.find(".contact-country").text(contact.country);
-                        panel.find(".contact-address").removeClass("d-none");
-                    }
-                };
+                console.log("payment token:", token);
 
                 $(".card-name").text(event.payment.token.paymentMethod.displayName);
-                update($("#billing-contact"), billingContact);
-                update($("#shipping-contact"), shippingContact);
 
                 var authorizationResult = {
                     status: ApplePaySession.STATUS_SUCCESS,
@@ -182,6 +145,9 @@ justEat = {
                 // Do something with the payment to capture funds and
                 // then dismiss the Apple Pay sheet for the session with
                 // the relevant status code for the payment's authorization.
+                console.log("payment completed with result: ");
+                console.log(authorizationResult);
+
                 session.completePayment(authorizationResult);
 
                 justEat.applePay.showSuccess();
@@ -250,7 +216,56 @@ justEat = {
             return $("html").attr("lang") || "en";
         },
         getMerchantIdentifier: function () {
-            return $("meta[name='apple-pay-merchant-id']").attr("content");
+            var merchantid = $("meta[name='apple-pay-merchant-id']").attr("content");
+            console.log("merchantId:", merchantid);
+            return merchantid;
+        },
+        fillContactDetails: function () {
+            // Get the contact details for use, for example to
+            // use to create an account for the user.
+            var billingContact = event.payment.billingContact;
+            var shippingContact = event.payment.shippingContact;
+
+            // Apply the details from the Apple Pay sheet to the page.
+            var update = function (panel, contact) {
+
+                if (contact.emailAddress) {
+                    panel.find(".contact-email")
+                        .text(contact.emailAddress)
+                        .attr("href", "mailto:" + contact.emailAddress)
+                        .append("<br/>")
+                        .removeClass("d-none");
+                }
+
+                if (contact.phoneNumber) {
+                    panel.find(".contact-telephone")
+                        .text(contact.phoneNumber)
+                        .attr("href", "tel:" + contact.phoneNumber)
+                        .append("<br/>")
+                        .removeClass("d-none");
+                }
+
+                if (contact.givenName) {
+                    panel.find(".contact-name")
+                        .text(contact.givenName + " " + contact.familyName)
+                        .append("<br/>")
+                        .removeClass("d-none");
+                }
+
+                if (contact.addressLines) {
+                    panel.find(".contact-address-lines").text(contact.addressLines.join(", "));
+                    panel.find(".contact-sub-locality").text(contact.subLocality);
+                    panel.find(".contact-locality").text(contact.locality);
+                    panel.find(".contact-sub-administrative-area").text(contact.subAdministrativeArea);
+                    panel.find(".contact-administrative-area").text(contact.administrativeArea);
+                    panel.find(".contact-postal-code").text(contact.postalCode);
+                    panel.find(".contact-country").text(contact.country);
+                    panel.find(".contact-address").removeClass("d-none");
+                }
+            };
+
+            update($("#billing-contact"), billingContact);
+            update($("#shipping-contact"), shippingContact);
         }
     }
 };
@@ -272,6 +287,7 @@ justEat = {
             justEat.applePay.showButton();
         } else {
             ApplePaySession.canMakePaymentsWithActiveCard(merchantIdentifier).then(function (canMakePayments) {
+
                 if (canMakePayments === true) {
                     justEat.applePay.showButton();
                 } else {
@@ -283,6 +299,7 @@ justEat = {
                 }
             });
         }
+
     } else {
         justEat.applePay.showError("This device and/or browser does not support Apple Pay.");
     }

@@ -14,9 +14,9 @@
     var language = Context.Request.Query["lang"].FirstOrDefault() ?? "en-GB";
     var region = new System.Globalization.RegionInfo(language);
 
-    var countryCode = region.TwoLetterISORegionName;
-    var currencyCode = region.ISOCurrencySymbol;
-    var currencySymbol = region.CurrencySymbol;
+    var countryCode = "US";//region.TwoLetterISORegionName;
+    var currencyCode = "USD";//region.ISOCurrencySymbol;
+    var currencySymbol = "$";//region.CurrencySymbol;
     var merchantId = Model.MerchantId;
 }
 

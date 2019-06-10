@@ -1,8 +1,9 @@
-using System;
+using System.Text;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace JustEat.ApplePayJS.Clients
 {
@@ -16,17 +17,19 @@ namespace JustEat.ApplePayJS.Clients
         }
 
         public async Task<JObject> GetMerchantSessionAsync(
-            Uri requestUri,
+            string validationUrl,
             MerchantSessionRequest request,
             CancellationToken cancellationToken = default)
         {
+            var stringContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json");
+
             // POST the data to create a valid Apple Pay merchant session.
-            using (var response = await _httpClient.PostAsJsonAsync(requestUri, request, cancellationToken))
+            using (var response = await _httpClient.PostAsync(validationUrl, stringContent))
             {
                 response.EnsureSuccessStatusCode();
 
                 // Read the opaque merchant session JSON from the response body.
-                return await response.Content.ReadAsAsync<JObject>(cancellationToken);
+                return await response.Content.ReadAsAsync<JObject>();
             }
         }
     }

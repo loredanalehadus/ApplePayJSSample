@@ -26,6 +26,9 @@
     <VersionSuffix></VersionSuffix>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="https.config.json" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Update="*.pfx" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
@@ -51,5 +54,10 @@
   </Target>
   <ItemGroup>
     <DotNetCliToolReference Include="BundlerMinifier.Core" Version="2.8.391" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Certificates.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
